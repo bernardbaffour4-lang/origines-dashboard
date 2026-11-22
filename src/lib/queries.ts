@@ -35,11 +35,10 @@ async function periodTotals(from: Date, to: Date) {
 export async function getKpis(days: number) {
   const now = new Date();
   const from = new Date(now.getTime() - days * DAY);
+  const current = await periodTotals(from, now);
+  const previous = await periodTotals(prevFrom, from);
   const prevFrom = new Date(from.getTime() - days * DAY);
-  const [current, previous] = await Promise.all([
-    periodTotals(from, now),
-    periodTotals(prevFrom, from),
-  ]);
+  
   return { current, previous };
 }
 

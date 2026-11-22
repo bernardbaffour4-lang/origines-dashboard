@@ -7,6 +7,7 @@ import { formatGBP } from "@/lib/money";
 import { getAlerts, getChannelSplit, getDailyRevenue, getKpis, listOrders } from "@/lib/queries";
 
 export const dynamic = "force-dynamic";
+export const maxDuration = 30;
 
 const RANGES = [7, 30, 90];
 const pct = (a: number, b: number) => (b === 0 ? null : (a - b) / b);
@@ -18,14 +19,12 @@ export default async function Overview({
 }) {
   const sp = await searchParams;
   const days = RANGES.includes(Number(sp.days)) ? Number(sp.days) : 30;
-
-  const [kpis, daily, split, alerts, recent] = await Promise.all([
-    getKpis(days),
-    getDailyRevenue(days),
-    getChannelSplit(days),
-    getAlerts(),
-    listOrders({}, 8),
-  ]);
+  const kpis = await getKpis(days);
+  const daily = await getDailyRevenue(days);
+  const split = await getChannelSplit(days);
+  const alerts = await getAlerts();
+  const recent = await listOrders({}, 8);
+  
   const { current: c, previous: p } = kpis;
   const net = c.revenue - c.fees;
   const totalSplit = split.reduce((s, r) => s + r.revenue, 0);
