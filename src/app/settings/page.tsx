@@ -92,6 +92,7 @@ export default async function SettingsPage({
         {logs.length === 0 ? (
           <Empty>No syncs have run yet.</Empty>
         ) : (
+          <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <tbody>
               {logs.map((l) => (
@@ -111,6 +112,7 @@ export default async function SettingsPage({
               ))}
             </tbody>
           </table>
+          </div>
         )}
       </Card>
     </div>

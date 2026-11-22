@@ -96,7 +96,7 @@ export default async function ListingsPage({
         </div>
       )}
 
-      <div className="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-6">
+      <div className="grid grid-cols-2 gap-3 sm:gap-4 md:grid-cols-3 lg:grid-cols-6">
         <Stat label="Active listings" value={stats.active} />
         <Stat label="Due for relist" value={stats.due} tone={stats.due ? "warn" : undefined} />
         <Stat label="Due in 3 days" value={stats.soon} />
@@ -120,13 +120,13 @@ export default async function ListingsPage({
               </Link>
             ))}
           </div>
-          <form action="/listings" className="flex gap-2">
+          <form action="/listings" className="flex w-full gap-2 sm:w-auto">
             <input type="hidden" name="f" value={filter} />
             <input
               name="q"
               defaultValue={q}
               placeholder="Search title, SKU, item no."
-              className="w-64 rounded-md border border-line bg-ink px-3 py-1.5 text-sm outline-none focus:border-accent"
+              className="w-full rounded-md border border-line bg-ink px-3 py-1.5 text-sm outline-none focus:border-accent sm:w-64"
             />
           </form>
         </div>
@@ -138,7 +138,44 @@ export default async function ListingsPage({
               : "No listings match this filter."}
           </Empty>
         ) : (
-          <div className="overflow-x-auto">
+          <>
+          {/* Phone: one card per listing */}
+          <ul className="space-y-3 md:hidden">
+            {rows.map((l) => {
+              const age = l.startTime ? Math.floor((Date.now() - l.startTime.getTime()) / DAY) : null;
+              const r = relistLabel(l, age, stats.ageDays);
+              return (
+                <li key={l.id} className="flex gap-3 rounded-lg border border-line p-3">
+                  {l.imageUrl ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img src={l.imageUrl} alt="" className="h-14 w-14 shrink-0 rounded object-cover" />
+                  ) : (
+                    <div className="h-14 w-14 shrink-0 rounded bg-white/5" />
+                  )}
+                  <div className="min-w-0 flex-1">
+                    <a href={l.viewUrl ?? "#"} target="_blank" rel="noreferrer" className="line-clamp-2 text-sm">
+                      {l.title}
+                    </a>
+                    <div className="mt-1 flex flex-wrap gap-x-3 gap-y-0.5 text-xs text-muted">
+                      <span className="font-semibold text-white">{l.price ? formatGBP(l.price, l.currency) : "—"}</span>
+                      <span className={(l.quantity ?? 0) <= 0 ? "text-amber-300" : ""}>Qty {l.quantity ?? "—"}</span>
+                      <span>{l.watchCount ?? 0} watching</span>
+                      <span>{age != null ? `${age} days` : "—"}</span>
+                    </div>
+                    <div className="mt-1 flex flex-wrap justify-between gap-2 text-xs">
+                      <span className="font-mono text-muted">
+                        {l.externalSku || <span className="font-sans text-amber-300">No SKU</span>}
+                      </span>
+                      <span className={r.cls}>{r.text}</span>
+                    </div>
+                  </div>
+                </li>
+              );
+            })}
+          </ul>
+
+          {/* Tablet / desktop: table */}
+          <div className="hidden overflow-x-auto md:block">
             <table className="w-full text-sm">
               <thead>
                 <tr className="text-left text-xs uppercase tracking-wider text-muted">
@@ -155,14 +192,7 @@ export default async function ListingsPage({
               <tbody>
                 {rows.map((l) => {
                   const age = l.startTime ? Math.floor((Date.now() - l.startTime.getTime()) / DAY) : null;
-                  const fixed = l.listingType === "FixedPriceItem";
-                  const daysLeft = age != null ? stats.ageDays - age : null;
-                  let relist: { text: string; cls: string };
-                  if (!fixed) relist = { text: "Auction — not relisted", cls: "text-muted" };
-                  else if (l.hasVariations) relist = { text: "Variations — skipped", cls: "text-muted" };
-                  else if ((l.quantity ?? 0) <= 0) relist = { text: "No stock — skipped", cls: "text-muted" };
-                  else if (daysLeft != null && daysLeft <= 0) relist = { text: "Due next run", cls: "text-amber-300" };
-                  else relist = { text: daysLeft != null ? `in ${daysLeft} day${daysLeft === 1 ? "" : "s"}` : "—", cls: "text-muted" };
+                  const relist = relistLabel(l, age, stats.ageDays);
                   return (
                     <tr key={l.id} className="border-t border-line align-top">
                       <td className="py-2.5 pr-3">
@@ -202,8 +232,9 @@ export default async function ListingsPage({
                 })}
               </tbody>
             </table>
-            {rows.length === 200 && <p className="mt-3 text-xs text-muted">Showing the oldest 200 — use search to narrow down.</p>}
           </div>
+          {rows.length === 200 && <p className="mt-3 text-xs text-muted">Showing the oldest 200 — use search to narrow down.</p>}
+          </>
         )}
       </Card>
 
@@ -223,7 +254,8 @@ export default async function ListingsPage({
         {log.length === 0 ? (
           <Empty>Nothing relisted yet.</Empty>
         ) : (
-          <table className="w-full text-sm">
+          <div className="overflow-x-auto">
+          <table className="w-full min-w-[560px] text-sm">
             <thead>
               <tr className="text-left text-xs uppercase tracking-wider text-muted">
                 <th className="pb-2 pr-3 font-medium">When</th>
@@ -250,15 +282,29 @@ export default async function ListingsPage({
               ))}
             </tbody>
           </table>
+          </div>
         )}
       </Card>
     </div>
   );
 }
 
+function relistLabel(
+  l: { listingType: string | null; hasVariations: boolean; quantity: number | null },
+  age: number | null,
+  ageDays: number,
+): { text: string; cls: string } {
+  const daysLeft = age != null ? ageDays - age : null;
+  if (l.listingType !== "FixedPriceItem") return { text: "Auction — not relisted", cls: "text-muted" };
+  if (l.hasVariations) return { text: "Variations — skipped", cls: "text-muted" };
+  if ((l.quantity ?? 0) <= 0) return { text: "No stock — skipped", cls: "text-muted" };
+  if (daysLeft != null && daysLeft <= 0) return { text: "Due next run", cls: "text-amber-300" };
+  return { text: daysLeft != null ? `Relist in ${daysLeft} day${daysLeft === 1 ? "" : "s"}` : "—", cls: "text-muted" };
+}
+
 function Stat({ label, value, tone }: { label: string; value: number; tone?: "warn" }) {
   return (
-    <div className="rounded-xl border border-line bg-panel p-4">
+    <div className="min-w-0 rounded-xl border border-line bg-panel p-3 sm:p-4">
       <div className="text-[11px] uppercase tracking-wider text-muted">{label}</div>
       <div className={`mt-1 text-2xl font-semibold tabular ${tone === "warn" ? "text-amber-300" : ""}`}>{value}</div>
     </div>

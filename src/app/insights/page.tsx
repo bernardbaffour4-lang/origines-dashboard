@@ -42,7 +42,7 @@ export default async function InsightsPage({ searchParams }: { searchParams: Pro
         </Card>
       ) : (
         <>
-          <div className="grid grid-cols-2 gap-4 md:grid-cols-5">
+          <div className="grid grid-cols-2 gap-3 sm:gap-4 md:grid-cols-5">
             <Stat label="Units sold" value={String(t.units)} />
             <Stat label="Revenue" value={formatGBP(t.revenue)} />
             <Stat label="Avg per unit" value={formatGBP(t.avg)} />
@@ -80,6 +80,7 @@ export default async function InsightsPage({ searchParams }: { searchParams: Pro
             {d.repeatSellers.length === 0 ? (
               <Empty>No part sold more than once in this period.</Empty>
             ) : (
+              <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>
                   <tr className="text-left text-xs uppercase tracking-wider text-muted">
@@ -103,6 +104,7 @@ export default async function InsightsPage({ searchParams }: { searchParams: Pro
                   ))}
                 </tbody>
               </table>
+              </div>
             )}
           </Card>
 
@@ -113,7 +115,7 @@ export default async function InsightsPage({ searchParams }: { searchParams: Pro
                   <tr key={i} className="border-t border-line first:border-0">
                     <td className="py-2 pr-3 tabular text-muted whitespace-nowrap">{format(s.placedAt, "d MMM")}</td>
                     <td className="py-2 pr-3">{s.title}</td>
-                    <td className="py-2 text-right tabular">{formatGBP(s.unitPrice)}</td>
+                    <td className="py-2 text-right tabular whitespace-nowrap">{formatGBP(s.unitPrice)}</td>
                   </tr>
                 ))}
               </tbody>
@@ -127,9 +129,9 @@ export default async function InsightsPage({ searchParams }: { searchParams: Pro
 
 function Stat({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-xl border border-line bg-panel p-4">
+    <div className="min-w-0 rounded-xl border border-line bg-panel p-3 sm:p-4">
       <div className="text-[11px] uppercase tracking-wider text-muted">{label}</div>
-      <div className="mt-1 text-2xl font-semibold tabular">{value}</div>
+      <div className="mt-1 truncate text-xl font-semibold tabular sm:text-2xl">{value}</div>
     </div>
   );
 }
@@ -155,7 +157,7 @@ function Breakdown({
             <th className="pb-2 pr-3 font-medium"></th>
             <th className="pb-2 pr-3 text-right font-medium">Sold</th>
             <th className="pb-2 pr-3 text-right font-medium">Revenue</th>
-            <th className="pb-2 pr-3 text-right font-medium">Avg</th>
+            <th className="hidden pb-2 pr-3 text-right font-medium sm:table-cell">Avg</th>
             <th className="pb-2 text-right font-medium" title="Number of different weeks with at least one sale">
               Weeks
             </th>
@@ -164,7 +166,7 @@ function Breakdown({
         <tbody>
           {shown.map((r) => (
             <tr key={r.name} className="border-t border-line">
-              <td className="py-2 pr-3">
+              <td className="w-full py-2 pr-3">
                 <div className="flex items-center justify-between gap-2">
                   <span className="truncate">{r.name}</span>
                   <span className="tabular text-[11px] text-muted">{Math.round(r.share * 100)}%</span>
@@ -174,8 +176,8 @@ function Breakdown({
                 </div>
               </td>
               <td className="py-2 pr-3 text-right tabular">{r.units}</td>
-              <td className="py-2 pr-3 text-right tabular">{formatGBP(r.revenue)}</td>
-              <td className="py-2 pr-3 text-right tabular text-muted">{formatGBP(r.avg)}</td>
+              <td className="py-2 pr-3 text-right tabular whitespace-nowrap">{formatGBP(r.revenue)}</td>
+              <td className="hidden py-2 pr-3 text-right tabular text-muted sm:table-cell">{formatGBP(r.avg)}</td>
               <td className="py-2 text-right tabular text-muted">{r.weeks}</td>
             </tr>
           ))}

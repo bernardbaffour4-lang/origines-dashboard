@@ -12,9 +12,9 @@ export function Card({
   action?: React.ReactNode;
 }) {
   return (
-    <section className={`rounded-xl border border-line bg-panel p-5 ${className}`}>
+    <section className={`min-w-0 rounded-xl border border-line bg-panel p-4 sm:p-5 ${className}`}>
       {(title || action) && (
-        <div className="mb-4 flex items-center justify-between">
+        <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
           {title && <h2 className="text-sm font-medium text-muted">{title}</h2>}
           {action}
         </div>
@@ -37,9 +37,9 @@ export function Kpi({
 }) {
   const good = delta == null ? null : invert ? delta <= 0 : delta >= 0;
   return (
-    <div className="rounded-xl border border-line bg-panel p-5">
+    <div className="min-w-0 rounded-xl border border-line bg-panel p-4 sm:p-5">
       <div className="text-xs uppercase tracking-wider text-muted">{label}</div>
-      <div className="mt-2 text-2xl font-semibold tabular">{value}</div>
+      <div className="mt-2 text-xl font-semibold tabular sm:text-2xl">{value}</div>
       {delta != null && Number.isFinite(delta) && (
         <div className={`mt-1 text-xs tabular ${good ? "text-emerald-400" : "text-rose-400"}`}>
           {delta >= 0 ? "▲" : "▼"} {Math.abs(delta * 100).toFixed(1)}% vs previous period

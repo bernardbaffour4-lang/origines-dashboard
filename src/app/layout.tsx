@@ -11,9 +11,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="en-GB">
       <body className="font-sans antialiased">
-        <div className="flex min-h-screen">
+        <div className="flex min-h-screen flex-col md:flex-row">
           <Sidebar />
-          <main className="flex-1 min-w-0 px-6 py-6 lg:px-10">{children}</main>
+          <main className="min-w-0 flex-1 px-3 py-4 sm:px-6 sm:py-6 lg:px-10">{children}</main>
         </div>
       </body>
     </html>

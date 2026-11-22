@@ -165,23 +165,25 @@ export default async function Overview({
               , then press Sync now.
             </Empty>
           ) : (
+            <div className="-mx-1 overflow-x-auto px-1">
             <table className="w-full text-sm">
               <tbody>
                 {recent.rows.map((o) => (
                   <tr key={o.id} className="border-t border-line first:border-0">
-                    <td className="py-2 pr-3 text-muted tabular">{format(o.placedAt, "dd MMM HH:mm")}</td>
+                    <td className="hidden py-2 pr-3 text-muted tabular whitespace-nowrap sm:table-cell">{format(o.placedAt, "dd MMM HH:mm")}</td>
                     <td className="py-2 pr-3">
                       <ChannelBadge channel={o.channel} />
                     </td>
-                    <td className="py-2 pr-3 truncate max-w-xs">{o.items[0]?.title ?? "—"}</td>
+                    <td className="py-2 pr-3"><div className="line-clamp-2 max-w-xs">{o.items[0]?.title ?? "—"}</div></td>
                     <td className="py-2 pr-3">
                       <StatusBadge status={o.status} />
                     </td>
-                    <td className="py-2 text-right tabular">{formatGBP(o.total, o.currency)}</td>
+                    <td className="py-2 text-right tabular whitespace-nowrap">{formatGBP(o.total, o.currency)}</td>
                   </tr>
                 ))}
               </tbody>
             </table>
+            </div>
           )}
         </Card>
       </div>

@@ -44,7 +44,7 @@ export default async function OrdersPage({ searchParams }: { searchParams: Promi
             name="q"
             defaultValue={sp.q}
             placeholder="Search order no., buyer, postcode, SKU, part…"
-            className="min-w-64 flex-1 rounded-md border border-line bg-ink px-3 py-2 text-sm outline-none focus:border-accent"
+            className="w-full flex-1 rounded-md border border-line bg-ink px-3 py-2 text-sm outline-none focus:border-accent sm:w-auto sm:min-w-64"
           />
           <select
             name="channel"
@@ -76,7 +76,49 @@ export default async function OrdersPage({ searchParams }: { searchParams: Promi
         {rows.length === 0 ? (
           <Empty>No orders match.</Empty>
         ) : (
-          <div className="overflow-x-auto">
+          <>
+          {/* Phone: one card per order */}
+          <ul className="space-y-3 md:hidden">
+            {rows.map((o) => {
+              const late = o.status === "PAID" && o.dispatchBy && o.dispatchBy.getTime() < Date.now();
+              return (
+                <li key={o.id} className="rounded-lg border border-line p-3">
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="flex items-center gap-2">
+                      <ChannelBadge channel={o.channel} />
+                      <StatusBadge status={o.status} />
+                    </div>
+                    <div className="font-semibold tabular">{formatGBP(o.total, o.currency)}</div>
+                  </div>
+                  <div className="mt-2 space-y-1 text-sm">
+                    {o.items.map((i) => (
+                      <div key={i.id} className="line-clamp-2">
+                        {i.quantity > 1 && <span className="text-muted">{i.quantity}× </span>}
+                        {i.title}
+                      </div>
+                    ))}
+                  </div>
+                  <div className="mt-2 flex flex-wrap justify-between gap-x-3 gap-y-1 text-xs text-muted">
+                    <span>
+                      {o.buyerName ?? o.buyerUsername ?? "—"}
+                      {o.shipPostcode ? ` · ${o.shipPostcode}` : ""}
+                    </span>
+                    <span className="tabular">{format(o.placedAt, "dd MMM HH:mm")}</span>
+                  </div>
+                  {o.dispatchBy && o.status === "PAID" && (
+                    <div className={`mt-1 text-xs ${late ? "text-rose-400" : "text-muted"}`}>
+                      Dispatch by {format(o.dispatchBy, "dd MMM")}
+                      {late ? " — late" : ""}
+                    </div>
+                  )}
+                  <div className="mt-1 font-mono text-[11px] text-muted">{o.orderNumber ?? o.externalId}</div>
+                </li>
+              );
+            })}
+          </ul>
+
+          {/* Tablet / desktop: table */}
+          <div className="hidden overflow-x-auto md:block">
             <table className="w-full text-sm">
               <thead>
                 <tr className="text-left text-xs uppercase tracking-wider text-muted">
@@ -133,6 +175,7 @@ export default async function OrdersPage({ searchParams }: { searchParams: Promi
               </tbody>
             </table>
           </div>
+          </>
         )}
 
         <div className="mt-4 flex justify-between text-sm">
