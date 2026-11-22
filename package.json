@@ -15,6 +15,7 @@
   "dependencies": {
     "date-fns": "^4.4.0",
     "drizzle-orm": "^0.45.4",
+    "fast-xml-parser": "^5.12.1",
     "next": "15.5.29",
     "postgres": "^4.1.1",
     "react": "19.1.0",

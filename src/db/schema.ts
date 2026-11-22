@@ -157,10 +157,55 @@ export const channelListings = pgTable(
     quantity: integer("quantity"),
     status: text("status"), // ACTIVE / ENDED / ERROR
     lastError: text("last_error"),
+    // eBay listing details (filled by the listing sync)
+    listingType: text("listing_type"), // FixedPriceItem / Chinese (auction)
+    hasVariations: boolean("has_variations").notNull().default(false),
+    startTime: timestamp("start_time", { withTimezone: true }),
+    quantitySold: integer("quantity_sold"),
+    watchCount: integer("watch_count"),
+    viewUrl: text("view_url"),
+    imageUrl: text("image_url"),
+    lastSeenAt: timestamp("last_seen_at", { withTimezone: true }),
     updatedAt: updatedAt(),
   },
-  (t) => [uniqueIndex("listings_account_ext").on(t.channelAccountId, t.externalId)],
+  (t) => [
+    uniqueIndex("listings_account_ext").on(t.channelAccountId, t.externalId),
+    index("listings_start").on(t.startTime),
+  ],
 );
+
+// One row per end-and-relist attempt. Status flow:
+// PENDING → ENDED → RELISTED   (or FAILED / SKIPPED)
+// A row left in ENDED means the item is offline and is retried automatically.
+export const relistLog = pgTable(
+  "relist_log",
+  {
+    id: id(),
+    channelAccountId: text("channel_account_id")
+      .notNull()
+      .references(() => channelAccounts.id, { onDelete: "cascade" }),
+    oldItemId: text("old_item_id").notNull(),
+    newItemId: text("new_item_id"),
+    title: text("title"),
+    sku: text("sku"),
+    quantity: integer("quantity"),
+    ageDays: integer("age_days"),
+    status: text("status").notNull(), // PENDING / ENDED / RELISTED / FAILED / SKIPPED
+    error: text("error"),
+    attempts: integer("attempts").notNull().default(0),
+    trigger: text("trigger"), // CRON / MANUAL
+    createdAt: createdAt(),
+    updatedAt: updatedAt(),
+  },
+  (t) => [index("relist_status").on(t.status), index("relist_created").on(t.createdAt)],
+);
+
+// Simple key/value settings editable from the dashboard (e.g. auto-relist on/off)
+export const appSettings = pgTable("app_settings", {
+  key: text("key").primaryKey(),
+  value: jsonb("value"),
+  updatedAt: updatedAt(),
+});
 
 export const stockMovements = pgTable(
   "stock_movements",

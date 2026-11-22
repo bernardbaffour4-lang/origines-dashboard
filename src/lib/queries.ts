@@ -35,10 +35,9 @@ async function periodTotals(from: Date, to: Date) {
 export async function getKpis(days: number) {
   const now = new Date();
   const from = new Date(now.getTime() - days * DAY);
+  const prevFrom = new Date(from.getTime() - days * DAY);
   const current = await periodTotals(from, now);
   const previous = await periodTotals(prevFrom, from);
-  const prevFrom = new Date(from.getTime() - days * DAY);
-  
   return { current, previous };
 }
 
@@ -110,7 +109,12 @@ export async function getAlerts() {
     .where(and(eq(syncLogs.ok, false), gte(syncLogs.startedAt, new Date(now.getTime() - DAY))))
     .orderBy(desc(syncLogs.startedAt))
     .limit(5);
+  const [stuckRelists] = await db
+    .select({ n: count() })
+    .from(schema.relistLog)
+    .where(eq(schema.relistLog.status, "ENDED"));
   return {
+    stuckRelists: Number(stuckRelists.n),
     lateDispatch: Number(late.n),
     toShip: Number(toShip.n),
     lowStock,

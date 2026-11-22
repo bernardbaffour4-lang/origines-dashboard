@@ -26,7 +26,9 @@ Wix APIs  ─┼─► /api/sync (cron, every 15 min) ─► Postgres ─► Das
 | Orders: unified list, search (order no., buyer, postcode, SKU, item title), filter by channel/status, late-dispatch highlight | ✅ |
 | Connections: connect eBay, sync log | ✅ |
 | Password protection for the whole dashboard | ✅ |
-| Inventory, listings, shipping labels, returns, messages, reports | Next |
+| Listings: eBay listing health (age, stock, watchers, missing SKUs, variations, auctions) | ✅ |
+| Automatic end & relist of Buy It Now listings older than 25 days (6am UK daily), with on/off switch, retry of failed relists, and history | ✅ |
+| Inventory, shipping labels, returns, messages, reports | Next |
 
 ## Stack
 
@@ -84,6 +86,22 @@ orders to catch status changes (paid → shipped → refunded).
    on Hobby, use [cron-job.org](https://cron-job.org) (free) to call
    `https://YOUR-DOMAIN/api/sync` every 15 min with header `Authorization: Bearer <CRON_SECRET>`.
 
+## Listings & automatic relisting
+
+- `/listings` shows every active eBay listing with its age, stock, sold count and watchers, plus filters for
+  what's due, missing SKUs and out-of-stock items.
+- Every morning at **06:00 UTC** (6am UK in winter, 7am in summer — Vercel schedules in UTC) `/api/relist`:
+  1. refreshes all active listings from eBay (Trading API `GetMyeBaySelling`),
+  2. retries any listing that was ended but not relisted last time,
+  3. for each **Buy It Now** listing older than `RELIST_AGE_DAYS` (25): `EndFixedPriceItem` → `RelistFixedPriceItem`
+     with the current available quantity, and points the listing row at the new item number.
+- Not relisted automatically: auctions, multi-variation listings, listings with 0 stock.
+- A relist gives a **new item number** — watchers and the "sold" count on the listing reset, and eBay insertion
+  fees apply if you're over your free listing allowance.
+- If ending works but relisting fails, the item is offline: it shows in red on Listings and Overview and is retried
+  on every run (up to 5 times).
+- Switch it off any time with the toggle on the Listings page (no redeploy needed).
+
 ## Project map
 
 ```
@@ -93,6 +111,10 @@ src/
   lib/ebay/config.ts         ← env + scopes
   lib/ebay/auth.ts           ← consent URL, code exchange, token refresh, ebayFetch()
   lib/ebay/orders.ts         ← eBay → unified order mapping + sync
+  lib/ebay/trading.ts        ← eBay Trading API (XML) client: active listings, end, relist
+  lib/ebay/listings.ts       ← listing sync + the end & relist job
+  app/listings/page.tsx      ← Listings health page
+  app/api/relist             ← end & relist job (cron 6am + "Run now")
   lib/wix/orders.ts          ← Wix → unified order mapping + sync
   lib/sync/upsert-order.ts   ← shared upsert, SKU matching, stock movements
   lib/queries.ts             ← all dashboard read queries (KPIs, charts, alerts, order list)

@@ -6,10 +6,11 @@ import { usePathname } from "next/navigation";
 const NAV = [
   { href: "/", label: "Overview" },
   { href: "/orders", label: "Orders" },
+  { href: "/listings", label: "Listings" },
   { href: "/settings", label: "Connections" },
 ];
 
-const LATER = ["Inventory", "Listings", "Shipping", "Returns", "Messages", "Reports"];
+const LATER = ["Inventory", "Shipping", "Returns", "Messages", "Reports"];
 
 export function Sidebar() {
   const path = usePathname();
