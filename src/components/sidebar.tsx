@@ -7,10 +7,11 @@ const NAV = [
   { href: "/", label: "Overview" },
   { href: "/orders", label: "Orders" },
   { href: "/listings", label: "Listings" },
+  { href: "/insights", label: "Sales insights" },
   { href: "/settings", label: "Connections" },
 ];
 
-const LATER = ["Inventory", "Shipping", "Returns", "Messages", "Reports"];
+const LATER = ["Inventory", "Shipping", "Returns", "Messages"];
 
 export function Sidebar() {
   const path = usePathname();
