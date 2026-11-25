@@ -173,3 +173,13 @@ export async function relistFixedPriceItem(itemId: string, quantity: number | nu
   if (!res.ItemID) throw new Error("RelistFixedPriceItem returned no new ItemID");
   return String(res.ItemID);
 }
+
+/** Change the price of a live fixed-price listing. Same item number, watchers and history are kept. */
+export async function reviseItemPrice(itemId: string, price: number, currency = "GBP") {
+  await tradingCall("ReviseInventoryStatus", {
+    InventoryStatus: {
+      ItemID: itemId,
+      StartPrice: { "#text": price.toFixed(2), "@_currencyID": currency },
+    },
+  });
+}
