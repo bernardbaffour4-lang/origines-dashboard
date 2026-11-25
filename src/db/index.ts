@@ -17,6 +17,9 @@ function client() {
   });
 }
 
+// IMPORTANT: always await database queries one after another — never Promise.all().
+// Parallel queries over Supabase's transaction pooler (port 6543) can hang half-sent,
+// tie up pooled connections, and make every page time out.
 const pg = globalForDb.pg ?? client();
 if (process.env.NODE_ENV !== "production") globalForDb.pg = pg;
 

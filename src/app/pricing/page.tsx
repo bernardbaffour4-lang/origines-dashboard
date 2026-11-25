@@ -41,12 +41,15 @@ export default async function PricingPage({ searchParams }: { searchParams: Prom
   const filter = (FILTERS.find((x) => x.key === sp.f)?.key ?? "dead") as FilterKey;
 
   const now = new Date();
-  const [mode, plan, log, lastRun] = await Promise.all([
-    getPricingMode(),
-    buildPlan(now),
-    getPricingLog(40),
-    getSetting<{ at?: string; changed?: number; trigger?: string; errors?: string[] } | null>(SETTINGS.lastPricingRun, null),
-  ]);
+  // One query at a time: running queries in parallel through Supabase's transaction
+  // pooler leaves connections stuck and makes every page time out.
+  const mode = await getPricingMode();
+  const plan = await buildPlan(now);
+  const log = await getPricingLog(40);
+  const lastRun = await getSetting<{ at?: string; changed?: number; trigger?: string; errors?: string[] } | null>(
+    SETTINGS.lastPricingRun,
+    null,
+  );
 
   const dead = plan.rows.filter((r) => r.result.action !== "HOLD_NEW");
   const changes = plan.rows.filter((r) => r.willChangeEbay);
