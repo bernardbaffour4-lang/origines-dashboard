@@ -102,6 +102,34 @@ orders to catch status changes (paid → shipped → refunded).
   on every run (up to 5 times).
 - Switch it off any time with the toggle on the Listings page (no redeploy needed).
 
+## Dead-stock pricing
+
+`/pricing` marks down items that haven't sold for 90+ days and adds a small flash discount in peak UK
+browsing hours. It only manages eBay **Buy It Now** listings that have a **SKU** and a **cost**.
+
+**Rules** (all in `src/lib/pricing/config.ts`):
+- Days unsold = since the last sale of that SKU (any channel), or since first listed. Relisting doesn't reset it.
+- Markdowns off the original price: 90d −10%, 120d −18%, 180d −28%, 270d −38%, 365d −50%.
+  At most −15% per step and one step every 14 days.
+- Floor: never below a **20% net margin** after cost, **7% VAT** (flat-rate style), eBay fees (13% + 30p) and postage.
+  After 365 days the floor drops to break-even.
+- Flash: −5% weekday 7–10pm, −7% Sunday 6–10pm, −4% Saturday 9am–12pm (UK time, BST handled), never below the floor.
+- Under 15 views/month → "fix the listing" instead of a cut. 3+ watchers → "send them an offer" first.
+- If you change a price yourself on eBay, the engine takes your price as the new starting point.
+
+**Modes** (switch on the page): **Off** · **Preview** (default — shows what it would do, changes nothing) · **Live**.
+
+**Set up:**
+1. Run the migration once: `DATABASE_URL=... npm run db:migrate` (adds `pricing_items` and `pricing_log`).
+2. Open **Dead-stock pricing** → *Download cost sheet* → fill in `cost` (ex-VAT) and `postage`, ideally
+   `stocked_since` (YYYY-MM-DD or DD/MM/YYYY) → save as CSV → *Upload*.
+3. Check the Preview, then switch to **Live**.
+4. Cron: `vercel.json` calls `/api/pricing/run` every 15 minutes. On Vercel's Hobby plan add it to
+   cron-job.org like `/api/sync` (header `Authorization: Bearer <CRON_SECRET>`).
+
+Every change is logged in `pricing_log` (shown on the page) — your record of when each price applied.
+Not automated yet: sending offers to watchers (shown as a to-do with the price) and Wix prices.
+
 ## Project map
 
 ```
@@ -115,6 +143,11 @@ src/
   lib/ebay/listings.ts       ← listing sync + the end & relist job
   app/listings/page.tsx      ← Listings health page
   app/api/relist             ← end & relist job (cron 6am + "Run now")
+  lib/pricing/config.ts      ← dead-stock pricing settings (fees, VAT, margin, markdowns, flash hours)
+  lib/pricing/engine.ts      ← the pricing rules (pure, no database)
+  lib/pricing/run.ts         ← builds the price plan and pushes changes to eBay
+  app/pricing/page.tsx       ← Dead-stock pricing page
+  app/api/pricing/*          ← run (cron every 15 min), mode, cost upload, cost sheet download
   lib/wix/orders.ts          ← Wix → unified order mapping + sync
   lib/sync/upsert-order.ts   ← shared upsert, SKU matching, stock movements
   lib/queries.ts             ← all dashboard read queries (KPIs, charts, alerts, order list)

@@ -3,6 +3,7 @@
   "crons": [
     { "path": "/api/sync", "schedule": "*/15 * * * *" },
     { "path": "/api/listings/sync", "schedule": "0 */6 * * *" },
-    { "path": "/api/relist", "schedule": "0 6 * * *" }
+    { "path": "/api/relist", "schedule": "0 6 * * *" },
+    { "path": "/api/pricing/run", "schedule": "*/15 * * * *" }
   ]
 }

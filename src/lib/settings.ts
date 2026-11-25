@@ -5,6 +5,9 @@ export const SETTINGS = {
   autoRelist: "auto_relist_enabled",
   relistLock: "relist_lock",
   lastRelistRun: "last_relist_run",
+  pricingMode: "pricing_mode", // OFF / PREVIEW / LIVE
+  pricingLock: "pricing_lock",
+  lastPricingRun: "last_pricing_run",
 } as const;
 
 export async function getSetting<T>(key: string, fallback: T): Promise<T> {

@@ -331,6 +331,46 @@ export const syncLogs = pgTable("sync_logs", {
   endedAt: timestamp("ended_at", { withTimezone: true }),
 });
 
+// ---------- Dead-stock pricing ----------
+
+// One row per SKU you want the pricing engine to manage. Cost etc. come from
+// the CSV upload on the Pricing page; the rest is the engine's own state.
+export const pricingItems = pgTable("pricing_items", {
+  sku: text("sku").primaryKey(),
+  enabled: boolean("enabled").notNull().default(true),
+  cost: money("cost"), // net of VAT
+  postage: money("postage"),
+  originalPrice: money("original_price"), // anchor for markdowns; set from eBay the first time if blank
+  stockedSince: timestamp("stocked_since", { withTimezone: true }), // first listed; estimated if blank
+  marketPrice: money("market_price"), // optional: lowest comparable price
+  basePrice: money("base_price"), // engine's current price without flash discount
+  lastBaseChangeAt: timestamp("last_base_change_at", { withTimezone: true }),
+  lastPushedPrice: money("last_pushed_price"), // last price the engine sent to eBay
+  lastPushedAt: timestamp("last_pushed_at", { withTimezone: true }),
+  views30d: integer("views_30d"),
+  viewsUpdatedAt: timestamp("views_updated_at", { withTimezone: true }),
+  createdAt: createdAt(),
+  updatedAt: updatedAt(),
+});
+
+// Every price the engine changed (or tried to), for history and "was price" proof.
+export const pricingLog = pgTable(
+  "pricing_log",
+  {
+    id: id(),
+    sku: text("sku").notNull(),
+    itemId: text("item_id"),
+    title: text("title"),
+    kind: text("kind").notNull(), // BASE_CUT / FLASH_ON / FLASH_OFF / MANUAL_CHANGE / ERROR
+    oldPrice: money("old_price"),
+    newPrice: money("new_price"),
+    note: text("note"),
+    ok: boolean("ok").notNull().default(true),
+    createdAt: createdAt(),
+  },
+  (t) => [index("pricing_log_created").on(t.createdAt), index("pricing_log_sku").on(t.sku)],
+);
+
 // ---------- Relations ----------
 
 export const productsRelations = relations(products, ({ many }) => ({

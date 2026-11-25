@@ -15,6 +15,13 @@
       "when": 1795359123883,
       "tag": "0001_listings_relist",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1795597510081,
+      "tag": "0002_pricing",
+      "breakpoints": true
     }
   ]
 }
